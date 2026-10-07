@@ -401,3 +401,19 @@
 "No recorded reading" = "No recorded reading";
 
 "Unlimited" = "Unlimited";
+
+// Additional coding providers
+"Sign in with Kimi CLI" = "Sign in with Kimi CLI";
+"Open Gemini CLI" = "Open Gemini CLI";
+"Configure GLM API key" = "Configure GLM API key";
+"Run kimi login, then refresh the connection." = "Run kimi login, then refresh the connection.";
+"Open Gemini CLI and sign in with Google, then refresh the connection." = "Open Gemini CLI and sign in with Google, then refresh the connection.";
+"Enter your Coding Plan API key in provider settings, then refresh." = "Enter your Coding Plan API key in provider settings, then refresh.";
+"Could not read provider usage. Try refreshing the connection." = "Could not read provider usage. Try refreshing the connection.";
+"GLM Coding Plan API key" = "GLM Coding Plan API key";
+"GLM API base URL" = "GLM API base URL";
+"Save API key" = "Save API key";
+"Enter a valid HTTPS API base URL." = "Enter a valid HTTPS API base URL.";
+"API key saved in Keychain." = "API key saved in Keychain.";
+"Could not save API key in Keychain." = "Could not save API key in Keychain.";
+"Requests" = "Requests";

@@ -516,7 +516,7 @@ private struct PeekPillOverlay: View {
         switch provider {
         case .claude: return usageStore.claude.peekWindow
         case .codex:  return usageStore.codex.peekWindow
-        case .grok, .antigravity:
+        case .grok, .antigravity, .kimi, .gemini, .glm:
             return connections.primary(provider)?.window ?? .unknown
         }
     }
@@ -533,7 +533,7 @@ private struct PeekPillOverlay: View {
         switch provider {
         case .claude: return usageStore.claude.peekWindowKind
         case .codex: return usageStore.codex.peekWindowKind
-        case .grok, .antigravity: return nil
+        case .grok, .antigravity, .kimi, .gemini, .glm: return nil
         }
     }
 

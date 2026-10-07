@@ -1,3 +1,5 @@
+This branch builds on upstream **0.3.0** and restores **Kimi Code, Gemini CLI, and GLM** alongside Claude, Codex, Grok, and Antigravity. Select any two in Settings → Providers. See [provider setup and billing semantics](docs/PROVIDERS.md#kimi-code-gemini-cli-and-glm).
+
 # CodexIsland
 
 [English](README.md) | [简体中文](README.zh-CN.md)

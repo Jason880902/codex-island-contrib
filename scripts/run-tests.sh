@@ -224,3 +224,5 @@ bash scripts/test-sparkline.sh
 bash scripts/test-charts.sh
 
 bash scripts/test-enterprise.sh
+
+bash scripts/test-coding-providers.sh

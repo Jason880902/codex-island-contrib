@@ -1,3 +1,5 @@
+此分支基于原作者 **0.3.0**，增加 **Kimi Code、Gemini CLI、GLM**，并保留 Claude、Codex、Grok、Antigravity。设置中任选两个显示；额度、Token、费用历史和周报均使用新版通路。GLM API Key 可在设置中保存到钥匙串。费用为 API 等值估算，未知模型会标记未定价。详见 [接入说明](docs/PROVIDERS.md#kimi-code-gemini-cli-and-glm)。
+
 # CodexIsland
 
 [English](README.md) | [简体中文](README.zh-CN.md)

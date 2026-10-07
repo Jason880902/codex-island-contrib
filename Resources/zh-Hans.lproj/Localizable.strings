@@ -401,3 +401,19 @@
 "No recorded reading" = "暂无使用记录";
 
 "Unlimited" = "不限额";
+
+// Additional coding providers
+"Sign in with Kimi CLI" = "使用 Kimi CLI 登录";
+"Open Gemini CLI" = "打开 Gemini CLI";
+"Configure GLM API key" = "配置 GLM API Key";
+"Run kimi login, then refresh the connection." = "运行 kimi login，然后刷新连接。";
+"Open Gemini CLI and sign in with Google, then refresh the connection." = "打开 Gemini CLI 并使用 Google 登录，然后刷新连接。";
+"Enter your Coding Plan API key in provider settings, then refresh." = "在供应商设置中填写 Coding Plan API Key，然后刷新。";
+"Could not read provider usage. Try refreshing the connection." = "无法读取供应商用量，请尝试刷新连接。";
+"GLM Coding Plan API key" = "GLM Coding Plan API Key";
+"GLM API base URL" = "GLM API 地址";
+"Save API key" = "保存 API Key";
+"Enter a valid HTTPS API base URL." = "请输入有效的 HTTPS API 地址。";
+"API key saved in Keychain." = "API Key 已保存到钥匙串。";
+"Could not save API key in Keychain." = "无法将 API Key 保存到钥匙串。";
+"Requests" = "请求次数";

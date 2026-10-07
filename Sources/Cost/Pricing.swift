@@ -22,6 +22,32 @@ enum Pricing {
     }
 
     private static let seedTable: [String: Rates] = [
+        // Published standard text API rates; subscription invoices are separate.
+        "gemini-2.5-pro": Rates(inputPerMillion: 1.25, outputPerMillion: 10,
+            cacheCreationPerMillion: 1.25, cacheReadPerMillion: 0.125),
+        "gemini-2.5-flash": Rates(inputPerMillion: 0.3, outputPerMillion: 2.5,
+            cacheCreationPerMillion: 0.3, cacheReadPerMillion: 0.03),
+        "gemini-2.5-flash-lite": Rates(inputPerMillion: 0.1, outputPerMillion: 0.4,
+            cacheCreationPerMillion: 0.1, cacheReadPerMillion: 0.01),
+        "gemini-3.1-flash-lite": Rates(inputPerMillion: 0.25, outputPerMillion: 1.5,
+            cacheCreationPerMillion: 0.25, cacheReadPerMillion: 0.025),
+        "glm-5.3": Rates(inputPerMillion: 1.4, outputPerMillion: 4.4,
+            cacheCreationPerMillion: 1.4, cacheReadPerMillion: 0.26),
+        "glm-5.2": Rates(inputPerMillion: 1.4, outputPerMillion: 4.4,
+            cacheCreationPerMillion: 1.4, cacheReadPerMillion: 0.26),
+        "glm-5.1": Rates(inputPerMillion: 1.4, outputPerMillion: 4.4,
+            cacheCreationPerMillion: 1.4, cacheReadPerMillion: 0.26),
+        "glm-5": Rates(inputPerMillion: 1, outputPerMillion: 3.2,
+            cacheCreationPerMillion: 1, cacheReadPerMillion: 0.2),
+        "glm-4.7": Rates(inputPerMillion: 0.6, outputPerMillion: 2.2,
+            cacheCreationPerMillion: 0.6, cacheReadPerMillion: 0.11),
+        "glm-4.6": Rates(inputPerMillion: 0.6, outputPerMillion: 2.2,
+            cacheCreationPerMillion: 0.6, cacheReadPerMillion: 0.11),
+        "glm-4.5": Rates(inputPerMillion: 0.6, outputPerMillion: 2.2,
+            cacheCreationPerMillion: 0.6, cacheReadPerMillion: 0.11),
+        "glm-4.5-air": Rates(inputPerMillion: 0.2, outputPerMillion: 1.1,
+            cacheCreationPerMillion: 0.2, cacheReadPerMillion: 0.03),
+
         // Anthropic — LiteLLM lists Opus 5 and 4-5/4-6/4-7/4-8 at the same
         // rates (cheaper than the original Opus 4 because Anthropic re-tiered
         // the Opus line in 2025). Opus 5's fast mode bills at $10/$50 but
@@ -184,7 +210,12 @@ enum Pricing {
     /// Claude Code workflows. ccusage's per-bucket threshold check would
     /// disagree with Anthropic's per-position-in-context billing anyway.
     static func cost(for event: TokenEvent) -> Double {
-        guard let rates = resolvedRates(for: canonicalModel(event.model), at: event.timestamp) else { return 0 }
+        let canonical = canonicalModel(event.model)
+        guard var rates = resolvedRates(for: canonical, at: event.timestamp) else { return 0 }
+        if canonical == "gemini-2.5-pro", event.inputTokens + event.cacheReadTokens > 200_000 {
+            rates = Rates(inputPerMillion: 2.5, outputPerMillion: 15,
+                          cacheCreationPerMillion: 2.5, cacheReadPerMillion: 0.25)
+        }
 
         let input = Double(event.inputTokens) / 1_000_000 * rates.inputPerMillion
         let output = Double(event.outputTokens) / 1_000_000 * rates.outputPerMillion
@@ -265,8 +296,11 @@ enum Pricing {
     }
 
     private static func canonicalModel(_ raw: String) -> String {
-        let raw = raw.hasPrefix("claude-") && raw.hasSuffix("-thinking")
-            ? String(raw.dropLast("-thinking".count)) : raw
+        let prefixes = ["google/", "google-vertex/", "moonshotai/", "moonshot/", "zai/", "z-ai/", "zhipuai/", "kimi-code/"]
+        let stripped = prefixes.first(where: { raw.hasPrefix($0) }).map { String(raw.dropFirst($0.count)) } ?? raw
+        let normalized = stripped.lowercased().hasPrefix("glm-") ? stripped.lowercased() : stripped
+        let raw = normalized.hasPrefix("claude-") && normalized.hasSuffix("-thinking")
+            ? String(normalized.dropLast("-thinking".count)) : normalized
         guard raw.count > 9 else { return raw }
         let suffixStart = raw.index(raw.endIndex, offsetBy: -9)
         let suffix = raw[suffixStart...]

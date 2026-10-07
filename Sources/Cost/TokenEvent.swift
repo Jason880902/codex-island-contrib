@@ -9,6 +9,7 @@ struct TokenEvent {
         case codex
         case grok
         case antigravity
+        case kimi, gemini, glm
     }
 
     let provider: Provider

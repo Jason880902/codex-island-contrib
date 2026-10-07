@@ -57,7 +57,7 @@ private func providerBrandColor(_ provider: AlertEngine.Provider) -> Color {
     switch provider {
     case .claude: return IslandColor.claude
     case .codex:  return IslandColor.codex
-    case .grok, .antigravity: return provider.color
+    case .grok, .antigravity, .kimi, .gemini, .glm: return provider.color
     }
 }
 
@@ -65,7 +65,7 @@ private func providerLowerLabel(_ provider: AlertEngine.Provider) -> String {
     switch provider {
     case .claude: return "Claude"
     case .codex:  return "Codex"
-    case .grok, .antigravity: return provider.name
+    case .grok, .antigravity, .kimi, .gemini, .glm: return provider.name
     }
 }
 
@@ -74,7 +74,7 @@ private func recentRows(for provider: AlertEngine.Provider, store: CostStore) ->
     switch provider {
     case .claude: return store.claude.recentByModel
     case .codex:  return store.codex.recentByModel
-    case .grok, .antigravity: return store.cost(for: provider).recentByModel
+    case .grok, .antigravity, .kimi, .gemini, .glm: return store.cost(for: provider).recentByModel
     }
 }
 
@@ -83,7 +83,7 @@ private func weekRowsList(for provider: AlertEngine.Provider, store: CostStore) 
     switch provider {
     case .claude: return store.claude.weekByModel
     case .codex:  return store.codex.weekByModel
-    case .grok, .antigravity: return store.cost(for: provider).weekByModel
+    case .grok, .antigravity, .kimi, .gemini, .glm: return store.cost(for: provider).weekByModel
     }
 }
 

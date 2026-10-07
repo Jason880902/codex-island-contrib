@@ -56,6 +56,10 @@ enum WeeklyCardTheme {
         case (_, .codex): return Color(red: 0.52, green: 0.80, blue: 0.98)
         case (_, .antigravity): return Color(red: 0.76, green: 0.66, blue: 0.98)
         case (_, .grok): return Color(red: 0.87, green: 0.96, blue: 0.73)
+        case (.paper, .kimi): return Color(red: 0.08, green: 0.40, blue: 0.60)
+        case (.paper, .gemini): return Color(red: 0.34, green: 0.38, blue: 0.72)
+        case (.paper, .glm): return Color(red: 0.12, green: 0.42, blue: 0.27)
+        case (_, .kimi), (_, .gemini), (_, .glm): return provider.color
         }
     }
 }

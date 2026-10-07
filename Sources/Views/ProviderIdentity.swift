@@ -19,6 +19,9 @@ extension IslandProvider {
         case .codex: return IslandColor.codex
         case .grok: return IslandColor.grok
         case .antigravity: return IslandColor.antigravity
+        case .kimi: return Color(red: 0.35, green: 0.76, blue: 0.95)
+        case .gemini: return Color(red: 0.55, green: 0.65, blue: 1)
+        case .glm: return Color(red: 0.36, green: 0.83, blue: 0.62)
         }
     }
     var legacy: AlertEngine.Provider? {
@@ -44,6 +47,7 @@ struct ProviderMark: View {
         case .codex: return Self.codex
         case .grok: return Self.grok
         case .antigravity: return Self.antigravity
+        case .kimi, .gemini, .glm: return nil
         }
     }
 
@@ -52,7 +56,7 @@ struct ProviderMark: View {
             if let image {
                 Image(nsImage: image).resizable().renderingMode(.template).scaledToFit()
             } else {
-                Image(systemName: provider == .grok ? "asterisk" : "a.circle")
+                Image(systemName: provider == .gemini ? "sparkles" : provider == .kimi ? "k.circle" : provider == .glm ? "g.circle" : provider == .grok ? "asterisk" : "a.circle")
                     .resizable().scaledToFit()
             }
         }

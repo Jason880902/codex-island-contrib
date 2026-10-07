@@ -31,9 +31,7 @@ final class ProviderConnectionStore: ObservableObject {
     }
 
     func snapshot(_ provider: IslandProvider) -> ConnectedUsage {
-        snapshots[provider] ?? ConnectedUsage(message: provider == .grok
-            ? "Sign in with Grok CLI to connect your subscription."
-            : "Sign in with agy CLI to connect your subscription.", needsLogin: true)
+        snapshots[provider] ?? ConnectedUsage(message: provider.connectionHint, needsLogin: true)
     }
 
     func limits(_ provider: IslandProvider) -> [ConnectedLimit] {
@@ -60,11 +58,11 @@ final class ProviderConnectionStore: ObservableObject {
         if !manually, let previous = lastAttempt[provider], Date().timeIntervalSince(previous) < 300 { return }
         if AppEnvironment.isDemo {
             snapshots[provider] = ConnectedUsage(limits: [
-                ConnectedLimit(id: "demo", label: provider == .grok ? "Credits" : "5h",
+                ConnectedLimit(id: "demo", label: provider == .grok ? "Credits" : provider == .gemini ? "gemini-3.6-flash" : provider == .glm ? "Requests" : "5h",
                     usedFraction: 0.38, resetAt: Date().addingTimeInterval(7200),
                     groupLabel: provider == .grok ? nil : "Gemini Models",
                     kind: provider == .grok ? .credits : .session)
-            ], plan: provider == .grok ? "SuperGrok" : "AI Pro", updatedAt: Date())
+            ], plan: provider == .grok ? "SuperGrok" : provider == .kimi ? "Kimi Code" : provider == .glm ? "Coding Plan" : "AI Pro", updatedAt: Date())
             if provider == .antigravity {
                 snapshots[provider]?.limits.append(ConnectedLimit(id: "weekly", label: "week",
                     usedFraction: 0.62, resetAt: Date().addingTimeInterval(86400),
@@ -88,10 +86,15 @@ final class ProviderConnectionStore: ObservableObject {
                 }
             }
             do {
-                let fetched = try await ProviderSessionRecovery.fetch {
-                    try await (provider == .grok ? GrokConnection.fetch() : AntigravityConnection.fetch())
-                } renew: {
-                    try await ProviderSessionRecovery.renew(provider == .grok ? "grok" : "agy")
+                let fetched: ConnectedUsage
+                if provider == .kimi || provider == .gemini || provider == .glm {
+                    fetched = try await CodingProviderConnection.fetch(provider)
+                } else {
+                    fetched = try await ProviderSessionRecovery.fetch {
+                        try await (provider == .grok ? GrokConnection.fetch() : AntigravityConnection.fetch())
+                    } renew: {
+                        try await ProviderSessionRecovery.renew(provider == .grok ? "grok" : "agy")
+                    }
                 }
                 guard !Task.isCancelled else { return }
                 snapshots[provider] = fetched
@@ -109,39 +112,38 @@ final class ProviderConnectionStore: ObservableObject {
                 case ProviderConnectionError.signIn, ProviderConnectionError.expired,
                      ProviderConnectionError.http(401):
                     needsLogin = true
-                    message = provider == .grok ? "Run grok login, then refresh the connection."
-                        : "Open agy CLI to restore your session, then refresh the connection."
+                    message = provider.connectionHint
                 case ProviderConnectionError.http(429):
                     cooldown[provider] = Date().addingTimeInterval(900)
                     message = "Rate limited. Retrying in 15 minutes."
                 default:
-                    message = provider == .grok ? "Could not read Grok usage. Try refreshing the connection."
-                        : "Could not read Antigravity usage. Check your agy CLI login, then refresh."
+                    message = "Could not read provider usage. Try refreshing the connection."
                 }
-                snapshots[provider] = ConnectedUsage(message: message, needsLogin: needsLogin)
+                var retained = snapshots[provider] ?? ConnectedUsage()
+                retained.message = message
+                retained.needsLogin = needsLogin
+                snapshots[provider] = retained
             }
         }
     }
 
     func connect(_ provider: IslandProvider) {
-        guard provider == .grok || provider == .antigravity else { return }
-        let command = provider == .grok ? "grok" : "agy"
-        guard let binary = ProviderSessionRecovery.binary(command) else {
-            let installURL = provider == .grok ? "https://grok.com/build" : "https://antigravity.google/docs/cli/install/"
+        guard !provider.usesLegacyUsage else { return }
+        let command = provider.connectionCommand
+        guard !command.isEmpty, let binary = ProviderSessionRecovery.binary(command) else {
+            let installURL = provider.installationURL
             if let url = URL(string: installURL) { NSWorkspace.shared.open(url) }
             return
         }
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("CodexIsland-\(command)-\(UUID().uuidString).command")
         let quoted = "'" + binary.replacingOccurrences(of: "'", with: "'\\''") + "'"
         do {
-            let arguments = provider == .grok ? " login" : ""
+            let arguments = provider == .grok || provider == .kimi ? " login" : ""
             try ("#!/bin/sh\n" + quoted + arguments + "\n").write(to: file, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: file.path)
             NSWorkspace.shared.open(file)
         } catch {
-            snapshots[provider] = ConnectedUsage(message: provider == .grok
-                ? "Run grok login in Terminal, then refresh the connection."
-                : "Open agy CLI to restore your session, then refresh the connection.", needsLogin: true)
+            snapshots[provider] = ConnectedUsage(message: provider.connectionHint, needsLogin: true)
         }
     }
 }

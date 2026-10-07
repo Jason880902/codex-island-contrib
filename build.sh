@@ -32,7 +32,7 @@ SPARKLE_FW="$SPARKLE_DIR/Sparkle.framework"
 # changing it strands them.
 SU_PUBLIC_KEY="bz1gwLBKgIL/Y7OO23o3gaMNIeTpvv/C90F9inr9Quo="
 
-SU_FEED_URL="${SU_FEED_URL:-https://github.com/ericjypark/codex-island/releases/latest/download/appcast.xml}"
+SU_FEED_URL="${SU_FEED_URL-https://github.com/ericjypark/codex-island/releases/latest/download/appcast.xml}"
 
 rm -rf "$BUILD_DIR"
 mkdir -p "$MACOS_DIR" "$RES_DIR" "$FRAMEWORKS_DIR"

@@ -4,7 +4,7 @@ import SQLite3
 
 final class UsageLedger {
     enum Source: String, CaseIterable {
-        case claude, codex, openCode, grok, antigravity
+        case claude, codex, openCode, grok, antigravity, kimi, gemini, glm
     }
 
     struct Snapshot {

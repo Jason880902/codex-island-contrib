@@ -154,3 +154,81 @@ on color.
 cumulative trends, and overview token history. VALUE uses illustrative monthly
 plan baselines ($30 and $19.99 respectively) only in demo mode. These fixtures
 never write the real cost cache or establish live subscription prices.
+
+## Kimi Code, Gemini CLI, and GLM
+
+This fork adds three providers to the upstream 0.3.0 connection, chart, alert,
+local-history, currency, and weekly-card flows. Choose any two in Settings →
+Providers. Existing `MacIsland.slotLeft` / `slotRight` assignments migrate once;
+upstream `selectedProviders` preferences take precedence.
+
+### Kimi Code
+
+Run `kimi login`, then refresh the connection. Credentials are read from
+`$KIMI_CODE_HOME/credentials/kimi-code.json` (default `~/.kimi-code`). The app
+never rotates tokens or writes CLI credentials. An expired session opens the
+CLI login through Settings. The usage adapter reads `/coding/v1/usages` and
+shows only reported, valid five-hour and weekly windows. Unknown limits stay
+unavailable; a zero denominator does not imply unused quota.
+
+Local usage reads `sessions/**/wire.jsonl` under that same home and retains
+turn-scoped `usage.record` entries only. Input, output, cache reads, and cache
+writes remain separate. Cumulative session records are skipped. Token history
+is durable even after source files are removed. Kimi subscription-only model
+aliases without a published API price remain explicitly **unpriced**, rather
+than inventing a zero-dollar API-equivalent value or a subscription invoice.
+
+### Gemini CLI
+
+Sign in with Google in the official `gemini` CLI, then refresh. The app reads
+`~/.gemini/oauth_creds.json` (or `$GEMINI_CLI_HOME/.gemini/oauth_creds.json`),
+resolves the account project with `loadCodeAssist`, and sends that project to
+`retrieveUserQuota`. It does not invent a project, refresh OAuth credentials,
+or substitute Flash/Pro model quotas for five-hour/weekly windows. Model quotas
+and reset times follow the response; the plan comes from the reported tier.
+API-key-only CLI authentication cannot provide a Google subscription quota.
+
+Local usage supports legacy `session-*.json` conversations and current JSONL
+records, including subagents, under `.gemini/tmp`. Repeated message IDs retain
+one final turn. Cached input is subtracted from total input; thinking tokens
+are added to output once. Session contents are read locally; only token counts,
+model identifiers, timestamps, and usage record identifiers enter the ledger.
+
+### GLM Coding Plan
+
+Enter the Coding Plan API key in provider settings. New keys are stored in
+macOS Keychain; saving removes the previous plaintext preference. Existing
+fork preferences remain readable until the user saves a replacement. You can
+also use `ZAI_API_KEY` or `GLM_API_KEY`. The configurable HTTPS base defaults to
+`https://open.bigmodel.cn`; international users can choose `https://api.z.ai`.
+`GLM_BASE_URL` overrides the saved base. Credentials are sent only to the
+configured host's `/api/monitor/usage/quota/limit` endpoint. The parser keeps
+reported request/token meters distinct and accepts numeric or string percentages
+and ISO/Unix reset times. The quota response contract is fixture-tested; a live
+GLM account has not been used to validate it.
+
+GLM local usage comes from OpenCode (`zai`, `z-ai`, `zhipuai`, or
+`zai-coding-plan`). OpenCode Google/Moonshot provider IDs also feed the Gemini
+and Kimi local cost histories. Subscription quota and local token history are
+independent, so local costs remain available without a quota login.
+
+### Price references and limits
+
+Dollar totals are standard text **API-equivalent estimates**, not subscription
+bills. The upstream remote catalog takes precedence; new offline fallback rates
+cover Gemini 2.5 text models, Gemini 3.1 Flash-Lite, and common GLM models.
+Gemini 2.5 Pro applies its >200k input-context tier. Unknown models keep their
+tokens and an unpriced warning. Tool fees, audio-specific rates, cache storage,
+and subscription invoices are outside these estimates.
+
+Published price sources checked on 2026-10-07:
+
+- [Google Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- [Z.AI API pricing](https://docs.z.ai/guides/overview/pricing)
+- [Kimi billing contract](https://platform.kimi.com/docs/pricing/chat)
+- [Gemini CLI quota types](https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/types.ts)
+- [Gemini CLI session recording](https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/services/chatRecordingService.ts)
+
+Run `bash scripts/test-coding-providers.sh` for the added fixture checks. Local
+preview builds can disable Sparkle with `SU_FEED_URL= ./build.sh`, preventing an
+upstream release from replacing the fork-specific integrations during testing.

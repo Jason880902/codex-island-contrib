@@ -305,6 +305,9 @@ struct CostTile: View {
             case .codex:  return usageStore.codex.plan?.lowercased()
             case .antigravity: return connections.snapshot(.antigravity).plan?.lowercased()
             case .grok: return connections.snapshot(.grok).plan?.lowercased()
+            case .kimi: return connections.snapshot(.kimi).plan?.lowercased()
+            case .gemini: return connections.snapshot(.gemini).plan?.lowercased()
+            case .glm: return connections.snapshot(.glm).plan?.lowercased()
             }
         }()
         guard let plan else { return nil }
@@ -333,6 +336,9 @@ struct CostTile: View {
             case .codex:  return usageStore.codex.plan?.lowercased()
             case .antigravity: return connections.snapshot(.antigravity).plan?.lowercased()
             case .grok: return connections.snapshot(.grok).plan?.lowercased()
+            case .kimi: return connections.snapshot(.kimi).plan?.lowercased()
+            case .gemini: return connections.snapshot(.gemini).plan?.lowercased()
+            case .glm: return connections.snapshot(.glm).plan?.lowercased()
             }
         }()
         guard let plan else { return nil }

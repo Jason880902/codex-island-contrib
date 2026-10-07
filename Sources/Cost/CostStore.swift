@@ -30,7 +30,7 @@ final class CostStore: ObservableObject {
         switch provider {
         case .claude: return claude
         case .codex: return codex
-        case .grok, .antigravity:
+        case .grok, .antigravity, .kimi, .gemini, .glm:
             return connectedCosts[provider] ?? ProviderCost(
                 today: .unavailable(label: "Today", reason: "Local usage has not been loaded"),
                 month: .unavailable(label: CostBucketing.currentMonthLabel(), reason: "Local usage has not been loaded"))
@@ -41,7 +41,7 @@ final class CostStore: ObservableObject {
         switch provider {
         case .claude: return claudeLoading
         case .codex: return codexLoading
-        case .grok, .antigravity: return connectedLoading.contains(provider)
+        case .grok, .antigravity, .kimi, .gemini, .glm: return connectedLoading.contains(provider)
         }
     }
 
@@ -77,57 +77,60 @@ final class CostStore: ObservableObject {
             loadDemoData()
             return
         }
-        for provider in [IslandProvider.antigravity, .grok] where !connectedLoading.contains(provider) {
+        let openCodeTask = Task.detached(priority: .utility) {
+            let observedAt = Date()
+            return UsageLedger.shared.retain(OpenCodeLogReader.scan(lookbackDays: nil),
+                                             source: .openCode, observedAt: observedAt)
+        }
+        for provider in [IslandProvider.antigravity, .grok, .kimi, .gemini, .glm] where !connectedLoading.contains(provider) {
             connectedLoading.insert(provider)
             Task.detached(priority: .utility) { [weak self] in
+                let openCode = await openCodeTask.value
                 let observedAt = Date()
-                var scan = provider == .antigravity
-                    ? AntigravityLogReader.scan(lookbackDays: nil)
-                    : GrokLogReader.scan(lookbackDays: nil)
+                var scan: LocalCostScan
+                switch provider {
+                case .antigravity: scan = AntigravityLogReader.scan(lookbackDays: nil)
+                case .grok: scan = GrokLogReader.scan(lookbackDays: nil)
+                case .kimi: scan = CodingLogReader.scan(.kimi)
+                case .gemini: scan = CodingLogReader.scan(.gemini)
+                case .glm: scan = LocalCostScan(events: openCode.events.filter { $0.provider == .glm })
+                default: return
+                }
+                if provider == .kimi || provider == .gemini {
+                    scan.events += openCode.events.filter { $0.provider == provider.costProvider }
+                }
                 let saved = UsageLedger.shared.retain(scan.events,
-                                                      source: provider == .antigravity ? .antigravity : .grok,
+                                                      source: UsageLedger.Source(rawValue: provider.rawValue) ?? .openCode,
                                                       observedAt: observedAt)
                 scan.events = saved.events
                 let cost = CostSummary.summarize(events: scan.events, historicalDays: saved.historicalDays)
-                await self?.commitLocal(cost, scan: scan, provider: provider, saveError: saved.saveError)
+                await self?.commitLocal(cost, scan: scan, provider: provider, saveError: saved.saveError ?? openCode.saveError)
             }
-        }
-        // Only scan OpenCode when at least one provider will consume
-        // the result; avoids wasted I/O when both are already loading.
-        let openCodeTask: Task<UsageLedger.Snapshot, Never>?
-        if !claudeLoading || !codexLoading {
-            openCodeTask = Task.detached(priority: .userInitiated) {
-                let observedAt = Date()
-                return UsageLedger.shared.retain(OpenCodeLogReader.scan(lookbackDays: nil),
-                                                 source: .openCode, observedAt: observedAt)
-            }
-        } else {
-            openCodeTask = nil
         }
         // Per-provider gate so a slow Claude scan doesn't block a fast
         // Codex one (and vice versa) on the next tick.
         if !claudeLoading {
             claudeLoading = true
             Task.detached(priority: .userInitiated) { [weak self] in
-                let openCode = await openCodeTask?.value
+                let openCode = await openCodeTask.value
                 let observedAt = Date()
                 let saved = UsageLedger.shared.retain(ClaudeLogReader.scan(lookbackDays: nil),
                                                       source: .claude, observedAt: observedAt)
-                let events = saved.events + (openCode?.events.filter { $0.provider == .claude } ?? [])
+                let events = saved.events + (openCode.events.filter { $0.provider == .claude })
                 let cost = CostSummary.summarize(events: events, historicalDays: saved.historicalDays)
-                await self?.commitClaude(cost, saveError: saved.saveError ?? openCode?.saveError)
+                await self?.commitClaude(cost, saveError: saved.saveError ?? openCode.saveError)
             }
         }
         if !codexLoading {
             codexLoading = true
             Task.detached(priority: .userInitiated) { [weak self] in
-                let openCode = await openCodeTask?.value
+                let openCode = await openCodeTask.value
                 let observedAt = Date()
                 let saved = UsageLedger.shared.retain(CodexLogReader.scan(lookbackDays: nil),
                                                       source: .codex, observedAt: observedAt)
-                let events = saved.events + (openCode?.events.filter { $0.provider == .codex } ?? [])
+                let events = saved.events + (openCode.events.filter { $0.provider == .codex })
                 let cost = CostSummary.summarize(events: events, historicalDays: saved.historicalDays)
-                await self?.commitCodex(cost, saveError: saved.saveError ?? openCode?.saveError)
+                await self?.commitCodex(cost, saveError: saved.saveError ?? openCode.saveError)
             }
         }
     }
@@ -239,7 +242,7 @@ final class CostStore: ObservableObject {
                 175, 188, 201, 214, 228, 239, 254, 268, 282, 164,
             ], millionScale: 1_000_000, apiDollarsPerMillion: 0.832)
         )
-        for (provider, scale) in [(IslandProvider.grok, 0.32), (.antigravity, 0.24)] {
+        for (provider, scale) in [(IslandProvider.grok, 0.32), (.antigravity, 0.24), (.kimi, 0.18), (.gemini, 0.22), (.glm, 0.16)] {
             func scaled(_ window: CostWindow) -> CostWindow {
                 CostWindow(dollars: window.dollars * scale,
                            tokens: Int(Double(window.tokens) * scale),
@@ -386,6 +389,9 @@ extension IslandProvider {
         case .codex: return .codex
         case .grok: return .grok
         case .antigravity: return .antigravity
+        case .kimi: return .kimi
+        case .gemini: return .gemini
+        case .glm: return .glm
         }
     }
 }

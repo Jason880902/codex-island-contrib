@@ -268,6 +268,9 @@ enum OpenCodeLogReader {
             switch provider {
             case "anthropic": mapped = .claude
             case "openai":    mapped = .codex
+            case "google", "google-vertex": mapped = .gemini
+            case "kimi-for-coding", "kimi-code", "moonshot", "moonshotai": mapped = .kimi
+            case "zai", "z-ai", "zhipuai", "zai-coding-plan": mapped = .glm
             default: return nil
             }
             return TokenEvent(

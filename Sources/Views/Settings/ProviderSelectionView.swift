@@ -141,6 +141,10 @@ struct ProviderConnectionSection: View {
     let connect: () -> Void
     let refresh: () -> Void
 
+    @State private var glmKey = ""
+    @State private var glmBase = UserDefaults.standard.string(forKey: "MacIsland.glmBaseURL") ?? "https://open.bigmodel.cn"
+    @State private var keyMessage: String?
+
     private var signedIn: Bool { !snapshot.needsLogin && snapshot.updatedAt != nil }
 
     var body: some View {
@@ -161,7 +165,7 @@ struct ProviderConnectionSection: View {
                 }
                 if signedIn {
                     Menu {
-                        Button(L10n.tr(provider == .grok ? "Sign in again…" : "Open agy CLI"), action: connect)
+                        Button(L10n.tr(provider.connectionAction), action: connect)
                     } label: {
                         Image(systemName: "ellipsis").frame(width: 20, height: 28)
                     }
@@ -186,9 +190,27 @@ struct ProviderConnectionSection: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if snapshot.needsLogin {
-                        Button(L10n.tr(provider == .grok ? "Sign in with Grok CLI" : "Open agy CLI"), action: connect)
+                        Button(L10n.tr(provider.connectionAction), action: connect)
                             .controlSize(.small)
                     }
+                }
+                if provider == .glm {
+                    SecureField(L10n.tr("GLM Coding Plan API key"), text: $glmKey)
+                    TextField(L10n.tr("GLM API base URL"), text: $glmBase)
+                    Button(L10n.tr("Save API key")) {
+                        guard let url = URL(string: glmBase), url.scheme == "https", url.host != nil,
+                              url.user == nil, url.password == nil else {
+                            keyMessage = "Enter a valid HTTPS API base URL."
+                            return
+                        }
+                        if GLMKeyStore.save(glmKey) {
+                            UserDefaults.standard.set(glmBase, forKey: "MacIsland.glmBaseURL")
+                            glmKey = ""
+                            keyMessage = "API key saved in Keychain."
+                            refresh()
+                        } else { keyMessage = "Could not save API key in Keychain." }
+                    }.disabled(glmKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if let keyMessage { Text(L10n.tr(keyMessage)).font(.system(size: 11)) }
                 }
                 if !snapshot.limits.isEmpty {
                     ProviderMetricSelection(provider: provider, usage: snapshot)

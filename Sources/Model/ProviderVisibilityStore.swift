@@ -12,6 +12,13 @@ final class ProviderVisibilityStore: ObservableObject {
         self.defaults = defaults
         if let saved = defaults.stringArray(forKey: Self.selectionKey) {
             self.selected = Self.normalized(saved.compactMap(IslandProvider.init(rawValue:)))
+        } else if defaults.object(forKey: "MacIsland.slotLeft") != nil || defaults.object(forKey: "MacIsland.slotRight") != nil {
+            self.selected = Self.normalized(["MacIsland.slotLeft", "MacIsland.slotRight"]
+                .compactMap { defaults.string(forKey: $0).flatMap(IslandProvider.init(rawValue:)) })
+        } else if defaults.object(forKey: "MacIsland.kimiVisible") != nil {
+            self.selected = Self.normalized([IslandProvider.kimi, .codex].filter {
+                defaults.object(forKey: "MacIsland.\($0.rawValue)Visible") as? Bool ?? true
+            })
         } else {
             let legacy: [IslandProvider] = [.claude, .codex].filter {
                 defaults.object(forKey: "MacIsland.\($0.rawValue)Visible") as? Bool ?? true
