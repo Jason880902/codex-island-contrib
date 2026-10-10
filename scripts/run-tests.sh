@@ -226,3 +226,5 @@ bash scripts/test-charts.sh
 bash scripts/test-enterprise.sh
 
 bash scripts/test-coding-providers.sh
+
+bash scripts/test-kimi-recovery.sh

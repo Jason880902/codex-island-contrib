@@ -166,8 +166,12 @@ upstream `selectedProviders` preferences take precedence.
 
 Run `kimi login`, then refresh the connection. Credentials are read from
 `$KIMI_CODE_HOME/credentials/kimi-code.json` (default `~/.kimi-code`). The app
-never rotates tokens or writes CLI credentials. An expired session opens the
-CLI login through Settings. The usage adapter reads `/coding/v1/usages` and
+never rotates tokens or writes CLI credentials. When the access token expires or the API returns 401, the app performs a bounded
+ACP `initialize` / `authenticate` check through the official CLI, rereads the
+credential file, and retries the quota request once. The CLI owns any token
+renewal. This starts no agent turn, session, or browser authorization. CLI lookup
+includes `$KIMI_CODE_HOME/bin/kimi` and the default `~/.kimi-code/bin/kimi`.
+Only an unrecoverable session needs the Settings login button. The usage adapter reads `/coding/v1/usages` and
 shows only reported, valid five-hour and weekly windows. Unknown limits stay
 unavailable; a zero denominator does not imply unused quota.
 

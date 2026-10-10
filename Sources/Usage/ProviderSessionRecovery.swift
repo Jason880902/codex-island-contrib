@@ -20,7 +20,10 @@ enum ProviderSessionRecovery {
 
     static func binary(_ command: String) -> String? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let paths = ["\(home)/.local/bin/\(command)", "\(home)/.grok/bin/\(command)",
+        let kimiHome = ProcessInfo.processInfo.environment["KIMI_CODE_HOME"].flatMap { $0.isEmpty ? nil : $0 }
+            ?? "\(home)/.kimi-code"
+        let providerPaths = command == "kimi" ? ["\(kimiHome)/bin/kimi"] : []
+        let paths = providerPaths + ["\(home)/.local/bin/\(command)", "\(home)/.grok/bin/\(command)",
                      "/opt/homebrew/bin/\(command)", "/usr/local/bin/\(command)"]
             + (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").map { "\($0)/\(command)" }
         return paths.first { FileManager.default.isExecutableFile(atPath: $0) }

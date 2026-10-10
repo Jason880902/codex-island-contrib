@@ -87,7 +87,11 @@ final class ProviderConnectionStore: ObservableObject {
             }
             do {
                 let fetched: ConnectedUsage
-                if provider == .kimi || provider == .gemini || provider == .glm {
+                if provider == .kimi {
+                    fetched = try await KimiSessionRecovery.fetch {
+                        try await CodingProviderConnection.fetch(.kimi)
+                    }
+                } else if provider == .gemini || provider == .glm {
                     fetched = try await CodingProviderConnection.fetch(provider)
                 } else {
                     fetched = try await ProviderSessionRecovery.fetch {

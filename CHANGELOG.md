@@ -1,3 +1,11 @@
+## 0.3.1 — Kimi session recovery
+
+- Automatically let the official Kimi CLI renew expired access tokens through a
+  bounded ACP authentication check before retrying quota usage once.
+- Discover Kimi in its installer directory and custom KIMI_CODE_HOME.
+- Keep interactive login for sessions that cannot be renewed; no model prompt or
+  browser login is started by automatic recovery.
+
 # Changelog
 
 User-facing changes per release. Format follows
