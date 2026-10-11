@@ -9,14 +9,11 @@ struct KimiSessionRecoveryTests {
         let binary = root.appendingPathComponent("bin/kimi")
         let script = """
         #!/bin/sh
-        test "$1" = acp || exit 8
-        IFS= read -r init
-        printf '%s\\n' "$init" | /usr/bin/grep -q 'initialize' || exit 9
-        printf '%s\\n' '{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":1}}'
-        IFS= read -r auth
-        printf '%s\\n' "$auth" | /usr/bin/grep -q 'authenticate' || exit 10
+        test "$1" = login || exit 8
+        test -z "$(command -v open)" || exit 9
         /usr/bin/touch "$KIMI_CODE_HOME/renewed"
-        printf '%s\\n' '{"jsonrpc":"2.0","id":2,"result":null}'
+        printf '%s\\n' '{"access_token":"renewed-test-token","expires_at":4102444800}' > "$KIMI_CODE_HOME/test-credentials.json"
+        exit 0
         """
         try script.write(to: binary, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: binary.path)
@@ -32,18 +29,21 @@ struct KimiSessionRecoveryTests {
         let restored = try await KimiSessionRecovery.fetch {
             attempts += 1
             if attempts == 1 { throw ProviderConnectionError.expired }
+            let data = try Data(contentsOf: root.appendingPathComponent("test-credentials.json"))
+            let credentials = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            precondition(credentials?["access_token"] as? String == "renewed-test-token")
             return ConnectedUsage(plan: "Kimi Code")
         } renew: {
             renewals += 1
             try await KimiSessionRecovery.renew()
         }
         precondition(attempts == 2 && renewals == 1 && restored.plan == "Kimi Code")
-        print("PASS Kimi discovers CLI and renews using initialize/authenticate without login or agent prompts")
-        let rejection = script.replacingOccurrences(of: "\"result\":null", with: "\"error\":{\"code\":-32000}")
+        print("PASS Kimi discovers CLI and renews using background CLI login without Terminal or browser")
+        let rejection = "#!/bin/sh\nprintf 'Opening browser for Kimi device login: redacted\\n' >&2\nwhile :; do :; done\n"
         try rejection.write(to: binary, atomically: true, encoding: .utf8)
         do { try await KimiSessionRecovery.renew(); fatalError("Expected rejected session") }
         catch ProviderConnectionError.expired { }
-        print("PASS Kimi rejected session needs login instead of retrying indefinitely")
+        print("PASS Kimi device-login fallback is stopped without opening a browser")
         let hanging = "#!/bin/sh\nwhile :; do :; done\n"
         try hanging.write(to: binary, atomically: true, encoding: .utf8)
         let began = Date()

@@ -166,14 +166,16 @@ upstream `selectedProviders` preferences take precedence.
 
 Run `kimi login`, then refresh the connection. Credentials are read from
 `$KIMI_CODE_HOME/credentials/kimi-code.json` (default `~/.kimi-code`). The app
-never rotates tokens or writes CLI credentials. When the access token expires or the API returns 401, the app performs a bounded
-ACP `initialize` / `authenticate` check through the official CLI, rereads the
-credential file, and retries the quota request once. The CLI owns any token
-renewal. This starts no agent turn, session, or browser authorization. CLI lookup
-includes `$KIMI_CODE_HOME/bin/kimi` and the default `~/.kimi-code/bin/kimi`.
-Only an unrecoverable session needs the Settings login button. The usage adapter reads `/coding/v1/usages` and
-shows only reported, valid five-hour and weekly windows. Unknown limits stay
-unavailable; a zero denominator does not imply unused quota.
+never rotates tokens or writes CLI credentials. When the access token expires or the API returns 401, the app runs the official
+`kimi login` command in a bounded background process. For an existing valid
+refresh credential, this command invokes the CLI's `ensureFresh` path and exits
+without user interaction. ACP `authenticate` only checks cached credentials and
+is not a renewal command. After the CLI exits, the app rereads the credential
+file and retries quota usage once. No Terminal window, agent session, or model
+prompt is started. The self-contained CLI receives an empty child PATH so it
+cannot run a browser opener; device-login fallback is detected and stopped.
+Only then is Settings login required. CLI lookup includes
+`$KIMI_CODE_HOME/bin/kimi` and `~/.kimi-code/bin/kimi`.
 
 Local usage reads `sessions/**/wire.jsonl` under that same home and retains
 turn-scoped `usage.record` entries only. Input, output, cache reads, and cache

@@ -1,3 +1,10 @@
+## 0.3.2 — Kimi renewal correction
+
+- Replace ACP cached-credential checks with the official CLI login renewal path.
+- Run renewal in the background without Terminal or a browser opener; stop
+  device-login fallback and retain manual login for revoked credentials.
+- Verify the renewed credential file is read before retrying quota usage.
+
 ## 0.3.1 — Kimi session recovery
 
 - Automatically let the official Kimi CLI renew expired access tokens through a
